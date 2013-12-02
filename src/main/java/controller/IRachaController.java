@@ -85,7 +85,7 @@ public class IRachaController {
 		JSONObject js = null;
 		JSONArray ja = json.getJSONArray(ITEMS);
 		// for (int i = 0; i < ja.length(); i++) {
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 2; i++) {
 			js = ja.getJSONObject(i);
 			Company comp = new Company(js.getString(LABEL), js.getString(URI));
 			Average average = appendCompanyInfo(comp);
@@ -115,38 +115,26 @@ public class IRachaController {
 				return 0;
 			}
 		}));
-
-		for (int i = 0; i < all.size(); i++) {
-			System.out.println("rank i: " + i + " monthly charge: "
-					+ all.get(i).getCurrentMonthly() + " name: "
-					+ all.get(i).getCompany().getName() + " state: "
-					+ all.get(i).getCompany().getPlace());
-		}
-
-		System.out.println("\n");
-		Iterator<Rate> it = stateMap.get("Ohio").iterator();
-		int rank = 1;
-		while (it.hasNext()) {
-			Rate r = it.next();
-			System.out.println("Ohio: rank: " + rank + " "
-					+ r.getCurrentMonthly() + " name: "
-					+ r.getCompany().getName() + " state: "
-					+ r.getCompany().getPlace());
-			rank++;
-		}
-
-		rank = 1;
-
-		System.out.println("\n");
-		it = stateMap.get("Alaska").iterator();
-		while (it.hasNext()) {
-			Rate r = it.next();
-			System.out.println("Alaska: rank: " + rank + " "
-					+ r.getCurrentMonthly() + " name: "
-					+ r.getCompany().getName() + " state: "
-					+ r.getCompany().getPlace());
-			rank++;
-		}
+		/*
+		 * for (int i = 0; i < all.size(); i++) { System.out.println("rank i: "
+		 * + i + " monthly charge: " + all.get(i).getCurrentMonthly() +
+		 * " name: " + all.get(i).getCompany().getName() + " state: " +
+		 * all.get(i).getCompany().getPlace()); }
+		 * 
+		 * System.out.println("\n"); Iterator<Rate> it =
+		 * stateMap.get("Ohio").iterator(); int rank = 1; while (it.hasNext()) {
+		 * Rate r = it.next(); System.out.println("Ohio: rank: " + rank + " " +
+		 * r.getCurrentMonthly() + " name: " + r.getCompany().getName() +
+		 * " state: " + r.getCompany().getPlace()); rank++; }
+		 * 
+		 * rank = 1;
+		 * 
+		 * System.out.println("\n"); it = stateMap.get("Alaska").iterator();
+		 * while (it.hasNext()) { Rate r = it.next();
+		 * System.out.println("Alaska: rank: " + rank + " " +
+		 * r.getCurrentMonthly() + " name: " + r.getCompany().getName() +
+		 * " state: " + r.getCompany().getPlace()); rank++; }
+		 */
 	}
 
 	private void addState(Rate rate) {
