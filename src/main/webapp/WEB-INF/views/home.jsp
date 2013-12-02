@@ -110,6 +110,7 @@ table {
 
 		appendEventForAboutIRacha();
 		appendEventForAboutAuthor();
+		appendEventForAboutIHowTo();
 	});
 
 	Array.prototype.clear = function() {
@@ -128,25 +129,30 @@ table {
 			if (tbl == "undefined" || tbl.length == 0) {
 				$("#container")
 						.append(
-								'<div id="intro" class="ui-widget"><ul style="list-style-type;"><li style="display: inline;"><a id="aboutIRacha" href="#"style="text-decoration: none;">About IRacha</a></li><li style="display: inline;"><a id="aboutIAuthor" href="#"style="text-decoration: none;padding-left:10px;">About Author</a></li></ul></div>');
+								'<div id="intro" class="ui-widget"><ul style="list-style-type;"><li style="display: inline;"><a id="aboutIHowTo" href="#"style="text-decoration: none;">How To</a></li><li style="display: inline;"><a id="aboutIRacha" href="#"style="text-decoration: none;padding-left:10px;">IRacha</a></li><li style="display: inline;"><a id="aboutIAuthor" href="#"style="text-decoration: none;padding-left:10px;">Author</a></li></ul></div>');
 			} else {
 				tbl
-						.after('<div id="intro" class="ui-widget"><ul style="list-style-type;"><li style="display: inline;"><a id="aboutIRacha" href="#"style="text-decoration: none;">About IRacha</a></li><li style="display: inline;"><a id="aboutIAuthor" href="#"style="text-decoration: none;padding-left:10px;">About Author</a></li></ul></div>');
+						.after('<div id="intro" class="ui-widget"><ul style="list-style-type;"><li style="display: inline;"><a id="aboutIHowTo" href="#"style="text-decoration: none;">How To</a></li><li style="display: inline;"><a id="aboutIRacha" href="#"style="text-decoration: none;padding-left:10px;">IRacha</a></li><li style="display: inline;"><a id="aboutIAuthor" href="#"style="text-decoration: none;padding-left:10px;">Author</a></li></ul></div>');
 			}
 			appendEventForAboutIRacha();
 			appendEventForAboutAuthor();
+			appendEventForAboutIHowTo();
 		}
+	}
+
+	function appendEventForAboutIHowTo() {
+		$("#aboutIHowTo").click(function(event) {
+			event.preventDefault();
+			removeAllAbouts();
+			removeMapAndRachaTable();
+			$("#recha-box-container").after(appendHowToMessage());
+		});
 	}
 
 	function appendEventForAboutIRacha() {
 		$("#aboutIRacha").click(function(event) {
 			event.preventDefault();
-			if ($("#aboutRacha").doesExist()) {
-				$("#aboutRacha").remove();
-			}
-			if ($("#aboutAuthor").doesExist()) {
-				$("#aboutAuthor").remove();
-			}
+			removeAllAbouts();
 			removeMapAndRachaTable();
 			$("#recha-box-container").after(appendIRachaMessage());
 		});
@@ -156,15 +162,42 @@ table {
 		$("#aboutIAuthor").click(function(event) {
 			event.preventDefault();
 			console.log("come here for aboutAuthor!!");
-			if ($("#aboutAuthor").doesExist()) {
-				$("#aboutAuthor").remove();
-			}
-			if ($("#aboutRacha").doesExist()) {
-				$("#aboutRacha").remove();
-			}
+			removeAllAbouts();
 			removeMapAndRachaTable();
 			$("#recha-box-container").after(appendAuthorMessage());
 		});
+	}
+
+	function removeAllAbouts() {
+		removeAboutAuthor();
+		removeAboutRacha();
+		removeAboutHowTo();
+	}
+
+	function removeAboutAuthor() {
+		if ($("#aboutAuthor").doesExist()) {
+			$("#aboutAuthor").remove();
+		}
+	}
+
+	function removeAboutRacha() {
+		if ($("#aboutRacha").doesExist()) {
+			$("#aboutRacha").remove();
+		}
+	}
+
+	function removeAboutHowTo() {
+		if ($("#aboutHowTo").doesExist()) {
+			$("#aboutHowTo").remove();
+		}
+	}
+
+	function appendHowToMessage() {
+		var msg = "";
+		msg = "<div id='aboutRacha' class='ui-widget' style='width:850px;text-align:left;'>There are two ways to rank utility comapnies.";
+		msg += "<ol><li>Type a specific utility company name</li><li>Click markers on the map and click \"Racha!\" or \"Reracha!\" link</li></ol>";
+		msg += "</div>";
+		return msg;
 	}
 
 	function appendIRachaMessage() {
@@ -211,10 +244,12 @@ table {
 			style="width: 850px; height: 600px;"></div>
 		<div id="intro" class="ui-widget">
 			<ul style="list-style-type: none;">
+				<li style="display: inline;"><a id="aboutIHowTo" href="#"
+					style="text-decoration: none;">How To</a></li>
 				<li style="display: inline;"><a id="aboutIRacha" href="#"
-					style="text-decoration: none;">About IRacha</a></li>
+					style="text-decoration: none;">IRacha</a></li>
 				<li style="display: inline;"><a id="aboutIAuthor" href="#"
-					style="text-decoration: none; padding-left: 10px;">About Author</a></li>
+					style="text-decoration: none; padding-left: 10px;">Author</a></li>
 			</ul>
 		</div>
 	</div>
