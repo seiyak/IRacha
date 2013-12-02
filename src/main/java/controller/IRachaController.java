@@ -39,12 +39,14 @@ import patricia.trie.PatriciaTrie;
 import domain.Average;
 import domain.Company;
 import domain.Rate;
+import domain.StateCapital;
 
 @Controller
 public class IRachaController {
 
 	private static final String ALL_COMPANIES_REQUEST = "http://en.openei.org/services/rest/utility_companies?version=2&format=json_plain";
 	private static final String MONTHLY_REQUEST_BASE = "http://en.openei.org/services/rest/utility_rates?version=latest&limit=5&detail=full&format=json_plain&ratesforutility=";
+	private static final String ALL_STATE_CAPITALS = "http://www.xfront.com/us_states/";
 	private static final String ITEMS = "items";
 	private static final String LABEL = "label";
 	private static final String URI = "uri";
@@ -95,13 +97,16 @@ public class IRachaController {
 			addState(rate);
 			companyNameMap.put(comp.getName(), rate);
 			all.add(rate);
+
+			System.out.println("json rate: " + i + " "
+					+ new JSONObject(rate).toString());
 		}
 
 		Collections.sort(all, (new Comparator<Rate>() {
 
 			@Override
 			public int compare(Rate o1, Rate o2) {
-				// TODO Auto-generated method stub
+
 				if (o1.getCurrentMonthly() < o2.getCurrentMonthly())
 					return -1;
 				else if (o1.getCurrentMonthly() > o2.getCurrentMonthly())
@@ -110,27 +115,45 @@ public class IRachaController {
 				return 0;
 			}
 		}));
+
+		for (int i = 0; i < all.size(); i++) {
+			System.out.println("rank i: " + i + " monthly charge: "
+					+ all.get(i).getCurrentMonthly() + " name: "
+					+ all.get(i).getCompany().getName() + " state: "
+					+ all.get(i).getCompany().getPlace());
+		}
+
+		System.out.println("\n");
+		Iterator<Rate> it = stateMap.get("Ohio").iterator();
+		int rank = 1;
+		while (it.hasNext()) {
+			Rate r = it.next();
+			System.out.println("Ohio: rank: " + rank + " "
+					+ r.getCurrentMonthly() + " name: "
+					+ r.getCompany().getName() + " state: "
+					+ r.getCompany().getPlace());
+			rank++;
+		}
+
+		rank = 1;
+
+		System.out.println("\n");
+		it = stateMap.get("Alaska").iterator();
+		while (it.hasNext()) {
+			Rate r = it.next();
+			System.out.println("Alaska: rank: " + rank + " "
+					+ r.getCurrentMonthly() + " name: "
+					+ r.getCompany().getName() + " state: "
+					+ r.getCompany().getPlace());
+			rank++;
+		}
 	}
 
 	private void addState(Rate rate) {
 
 		if (stateMap.get(rate.getCompany().getPlace()) == null) {
 			// first time to access
-			stateMap.put(rate.getCompany().getPlace(), new TreeSet<Rate>(
-					new Comparator<Rate>() {
-
-						@Override
-						public int compare(Rate o1, Rate o2) {
-							// TODO Auto-generated method stub
-							if (o1.getCurrentMonthly() < o2.getCurrentMonthly())
-								return -1;
-							else if (o1.getCurrentMonthly() > o2
-									.getCurrentMonthly())
-								return 1;
-
-							return 0;
-						}
-					}));
+			stateMap.put(rate.getCompany().getPlace(), new TreeSet<Rate>());
 		}
 
 		stateMap.get(rate.getCompany().getPlace()).add(rate);
@@ -362,19 +385,19 @@ public class IRachaController {
 		Iterator<String> itr = sets.iterator();
 		JSONObject json = new JSONObject();
 		JSONArray ja = new JSONArray();
-		Map<String, String> map = new LinkedHashMap<String, String>();
 		int index = 0;
 		while (itr.hasNext()) {
 			// System.out.println("prefixed: " + itr.next());
 			if (index > 10) {
 				break;
 			}
+			Map<String, String> map = new LinkedHashMap<String, String>();
 			map.put("prefix-" + index, itr.next());
+			ja.put(map);
 			index++;
 		}
-
-		ja.put(map);
 		json.put("data", ja);
+		System.out.println("json for perfix: " + json.toString());
 		writeResponseWithJSON(response, json.toString());
 	}
 
@@ -386,12 +409,13 @@ public class IRachaController {
 		TreeSet<Rate> rates = null;
 		JSONObject json = new JSONObject();
 		JSONArray ja = new JSONArray();
-		Map<String, Rate> m = new HashMap<String, Rate>();
+		Map<String, JSONObject> m = new HashMap<String, JSONObject>();
 
 		try {
 			if (statePat.search(specific)) {
 				json.put("kind", "state");
 				rates = stateMap.get(specific);
+
 				itr = rates.iterator();
 				int count = 0;
 				while (itr.hasNext()) {
@@ -399,18 +423,36 @@ public class IRachaController {
 						break;
 					}
 					Rate r = itr.next();
-					System.out.println("specific state: " + r);
-					m.put("state-" + count, r);
+					json.put("kind", "company");
+					json.put("rank-state", -1);
+					json.put("rank-us", -1);
+					// m.put("company-0", companyNameMap.get(specific));
+
+					r.setRankInState(getRankForCompanyInState(r));
+					r.setRankInUS(getRankInUS(r.getCompany().getName()));
+					Map<String, JSONObject> mm = new HashMap<String, JSONObject>();
+					mm.put("company-" + count, new JSONObject(r));
+					ja.put(mm);
 					count++;
 				}
 			} else if (companyNamePat.search(specific)) {
 				json.put("kind", "company");
-				json.put("rank-state",
+				// json.put("rank-state",
+				// getRankForCompanyInState(companyNameMap.get(specific)));
+				// json.put("rank-us", getRankInUS(specific));
+				// m.put("company-0", companyNameMap.get(specific));
+
+				json.put("rank-state", -1);
+				json.put("rank-us", -1);
+				// m.put("company-0", companyNameMap.get(specific));
+
+				companyNameMap.get(specific).setRankInState(
 						getRankForCompanyInState(companyNameMap.get(specific)));
-				json.put("rank-us", getRankInUS(specific));
-				m.put("company-0", companyNameMap.get(specific));
-				System.out.println("specific company: "
-						+ companyNameMap.get(specific));
+				companyNameMap.get(specific).setRankInUS(
+						getRankInUS(companyNameMap.get(specific).getCompany()
+								.getName()));
+				m.put("company-0", new JSONObject(companyNameMap.get(specific)));
+				ja.put(m);
 			}
 		} catch (NullPointerException ex) {
 			System.err.println("found null pointer exception for specific: "
@@ -419,23 +461,28 @@ public class IRachaController {
 					+ " might be a company name.");
 
 			json.put("kind", "company");
-			json.put("rank-state",
+			json.put("rank-state", -1);
+			json.put("rank-us", -1);
+
+			companyNameMap.get(specific).setRankInState(
 					getRankForCompanyInState(companyNameMap.get(specific)));
-			json.put("rank-us", getRankInUS(specific));
-			m.put("company-0", companyNameMap.get(specific));
-			System.out.println("specific company: "
-					+ companyNameMap.get(specific));
+			companyNameMap.get(specific).setRankInUS(
+					getRankInUS(companyNameMap.get(specific).getCompany()
+							.getName()));
+			m.put("company-0", new JSONObject(companyNameMap.get(specific)));
+			ja.put(m);
 		}
 
-		ja.put(m);
 		json.put("data", ja);
-		// System.out.println("json: " + json.toString());
+		System.out.println("json for searchSpecific(): " + json.toString());
 		writeResponseWithJSON(response, json.toString());
 		return "home";
 	}
 
 	private int getRankForCompanyInState(Rate rate) {
 
+		System.out.println("state map for: " + rate.getCompany().getPlace()
+				+ " monthly charge: " + rate.getCurrentMonthly());
 		if (rate == null || rate.getCurrentMonthly() == Double.MAX_VALUE) {
 			return -1;
 		}
@@ -445,8 +492,14 @@ public class IRachaController {
 		if (itr != null) {
 			int rank = 1;
 			while (itr.hasNext()) {
-				if (itr.next().getCompany().getName()
+				Rate r = itr.next();
+				System.out.println("rank: " + rank + " r name: "
+						+ r.getCompany().getName() + " rate name: "
+						+ rate.getCompany().getName());
+				if (r.getCompany().getName()
 						.equals(rate.getCompany().getName())) {
+					System.out.println("found state rank: " + rank + " for: "
+							+ rate.getCompany().getName());
 					return rank;
 				}
 
@@ -454,7 +507,7 @@ public class IRachaController {
 			}
 		}
 
-		return -1;
+		return Integer.MAX_VALUE;
 	}
 
 	private int getRankInUS(String companyName) {
@@ -463,16 +516,23 @@ public class IRachaController {
 			return -1;
 		}
 
+		System.out.println("companyName fpr rank in us: " + companyName);
 		Iterator<Rate> itr = all.iterator();
 		if (itr != null) {
 			int rank = 1;
 			Rate r = null;
 			while (itr.hasNext()) {
 				r = itr.next();
+				System.out.println("rank in us, " + rank + " r name: "
+						+ r.getCompany().getName() + " companyName: "
+						+ companyName);
 				if (r.getCompany().getName().equals(companyName)) {
-					if (r.getCurrentMonthly() == Double.MAX_VALUE) {
+					if (r.getCurrentMonthly() > 100) {
 						return -1;
 					}
+
+					System.out.println("found us rank: " + rank + " for: "
+							+ r.getCompany().getName());
 					return rank;
 				}
 
@@ -480,67 +540,144 @@ public class IRachaController {
 			}
 		}
 
-		return -1;
+		return Integer.MAX_VALUE;
 	}
 
 	@RequestMapping(value = "/service/multiple-states", method = RequestMethod.GET)
 	public String searchMultipleState(
-			@RequestParam Map<String, String> multipleStates,
+			@RequestParam("multiple-states") String states,
 			HttpServletResponse response) throws MalformedURLException {
 
-		Set<Entry<String, String>> entries = multipleStates.entrySet();
-		TreeSet<Rate> ts = null;
-		Iterator<Rate> itr = null;
-		List<Rate> l = new ArrayList<Rate>();
-		for (Entry<String, String> entry : entries) {
-			if (entry.getKey().startsWith("multiple-states")) {
-				ts = stateMap.get(entry.getValue());
-				if (ts == null) {
-					continue;
-				}
+		System.out.println("states: " + states);
 
-				itr = ts.iterator();
-				int count = 0;
-				while (itr.hasNext()) {
-					if (count == 5) {
-						break;
-					}
-					l.add(itr.next());
-					count++;
+		String[] sts = states.split(",");
+		Iterator<Rate> itr = null;
+		JSONObject json = new JSONObject();
+		JSONArray ja = new JSONArray();
+		List<Rate> rates = new ArrayList<Rate>();
+		for (String st : sts) {
+			System.out.println("each parametr: " + st);
+
+			if (stateMap.get(st) == null) {
+				continue;
+			}
+			itr = stateMap.get(st).iterator();
+
+			System.out.println("state map size: " + stateMap.get(st).size());
+			int count = 0;
+			while (itr.hasNext()) {
+				if (count == 3) {
+					break;
 				}
+				/*
+				 * Rate r = itr.next(); System.out.println("multiple r: " + r);
+				 * json.put("kind", "company"); json.put("rank-state", -1);
+				 * json.put("rank-us", -1);
+				 * 
+				 * r.setRankInState(getRankForCompanyInState(r));
+				 * r.setRankInUS(getRankInUS(r.getCompany().getName())); //
+				 * m.put("company-0", companyNameMap.get(specific)); Map<String,
+				 * JSONObject> m = new HashMap<String, JSONObject>();
+				 * 
+				 * m.put("company-" + index, new JSONObject(r)); ja.put(m);
+				 */
+				rates.add(itr.next());
+				count++;
 			}
 		}
 
-		JSONObject json = new JSONObject();
-		JSONArray ja = new JSONArray();
-		Map<String, Rate> map = new HashMap<String, Rate>();
-		Collections.sort(l, (new Comparator<Rate>() {
+		Collections.sort(rates, new Comparator<Rate>() {
 
 			@Override
 			public int compare(Rate o1, Rate o2) {
 				// TODO Auto-generated method stub
-				if (o1.getCurrentMonthly() < o2.getCurrentMonthly())
-					return -1;
-				else if (o1.getCurrentMonthly() > o2.getCurrentMonthly())
-					return 1;
-
-				return 0;
+				return (int) (o1.getCurrentMonthly() - o2.getCurrentMonthly());
 			}
-		}));
-		for (int i = 0; i < l.size(); i++) {
-			map.put("multiple-states" + i, l.get(i));
-		}
-		/*
-		 * int index = 0; while (itr.hasNext()) { Rate r = itr.next();
-		 * System.out.println("multiple states: " + r);
-		 * map.put("multiple-states" + index, r); index++; }
-		 */
+		});
 
-		ja.put(map);
+		for (int i = 0; i < rates.size(); i++) {
+			Rate r = rates.get(i);
+			json.put("kind", "company");
+			json.put("rank-state", -1);
+			json.put("rank-us", -1);
+
+			r.setRankInState(getRankForCompanyInState(r));
+			r.setRankInUS(getRankInUS(r.getCompany().getName()));
+			Map<String, JSONObject> m = new HashMap<String, JSONObject>();
+			m.put("company-" + i, new JSONObject(r));
+			ja.put(m);
+
+		}
+
 		json.put("data", ja);
 		writeResponseWithJSON(response, json.toString());
 
-		return null;
+		return "home";
+	}
+
+	@RequestMapping(value = "/service/capitals", method = RequestMethod.GET)
+	public String getAllStateCapitals(HttpServletResponse response)
+			throws MalformedURLException {
+
+		List<StateCapital> capitals = parseAllStateCapitals();
+		JSONObject json = new JSONObject();
+		JSONArray js = new JSONArray();
+		for (int i = 0; i < capitals.size(); i++) {
+			Map<String, JSONObject> map = new HashMap<String, JSONObject>();
+			map.put("capital-" + i, new JSONObject(capitals.get(i)));
+			js.put(map);
+		}
+
+		json.put("data", js);
+		writeResponseWithJSON(response, json.toString());
+		return "home";
+	}
+
+	private List<StateCapital> parseAllStateCapitals() {
+
+		List<StateCapital> capitals = new ArrayList<StateCapital>();
+
+		Document doc = null;
+		try {
+			doc = Jsoup.connect(ALL_STATE_CAPITALS).timeout(10 * 1000).get();
+			Elements els = doc.select("#container > ol > li > p");
+			int len = els.size();
+			int count = 0;
+			int idx = 0;
+			String state = "";
+			String capital = "";
+			double lng = 0, lat = 0;
+			for (int i = 0; i < len; i++) {
+				if (count == 4) {
+					System.out.println("\n");
+					count = 0;
+					capitals.add(new StateCapital(state, capital, lng, lat));
+					state = capital = "";
+					lng = lat = 0;
+				}
+
+				if (count == 0) {
+					idx = els.get(i).text().indexOf(":") + 2;
+					state = els.get(i).text().substring(idx);
+				} else if (count == 1) {
+					idx = els.get(i).text().indexOf(":") + 2;
+					capital = els.get(i).text().substring(idx);
+				} else if (count == 2) {
+					idx = els.get(i).text().indexOf(":") + 2;
+					lat = Double.parseDouble(els.get(i).text().substring(idx));
+				} else if (count == 3) {
+					idx = els.get(i).text().indexOf(":") + 2;
+					lng = Double.parseDouble(els.get(i).text().substring(idx));
+				}
+
+				count++;
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return capitals;
 	}
 
 	/**
@@ -553,6 +690,11 @@ public class IRachaController {
 	 */
 	protected void writeResponseWithJSON(HttpServletResponse response,
 			String json) {
+
+		if (response == null) {
+			return;
+		}
+
 		HttpServletResponseWrapper wrapper = new HttpServletResponseWrapper(
 				response);
 		wrapper.setContentType("application/json");

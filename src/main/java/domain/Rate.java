@@ -1,6 +1,6 @@
 package domain;
 
-public class Rate {
+public class Rate implements Comparable<Rate> {
 	private String sector;
 	private String unit;
 	private String startDate;
@@ -9,11 +9,29 @@ public class Rate {
 	private double diff;
 	private Company company;
 	private Average average;
+	private int rankInUS;
+	private int rankInState;
+
+	public int getRankInUS() {
+		return rankInUS;
+	}
+
+	public void setRankInUS(int rankInUS) {
+		this.rankInUS = rankInUS;
+	}
+
+	public int getRankInState() {
+		return rankInState;
+	}
+
+	public void setRankInState(int rankInState) {
+		this.rankInState = rankInState;
+	}
 
 	public Rate() {
 		this.sector = "Residential";
 		this.unit = "kWh";
-		this.startDate = "";
+		this.startDate = "-";
 		this.currentMonthly = Double.MAX_VALUE;
 		this.previousMonthly = Double.MAX_VALUE;
 		this.diff = 0;
@@ -119,5 +137,30 @@ public class Rate {
 		hash = hash * 31 + company.getName().hashCode();
 		hash = hash * 13 + (average == null ? 0 : average.hashCode());
 		return hash;
+	}
+
+	@Override
+	public int compareTo(Rate o) {
+
+		if (company.getName().equals(o.getCompany().getName())) {
+			return 0;
+		}
+
+		if (!company.getName().equals(o.getCompany().getName())
+				&& !company.getId().equals(o.getCompany().getId())
+				&& currentMonthly == o.getCurrentMonthly()) {
+
+			return company.getName().compareTo(o.getCompany().getName());
+		} else if (!company.getName().equals(o.getCompany().getName())
+				&& !company.getId().equals(o.getCompany().getId())
+				&& currentMonthly < o.getCurrentMonthly()) {
+			return -1;
+		} else if (!company.getName().equals(o.getCompany().getName())
+				&& !company.getId().equals(o.getCompany().getId())
+				&& currentMonthly > o.getCurrentMonthly()) {
+			return 1;
+		}
+
+		return 0;
 	}
 }
